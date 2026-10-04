@@ -6,7 +6,7 @@ Rozšíření pouze vytvoří soubor ke stažení. **Neodesílá rozvrh na GitHu
 
 ## Instalace v Brave
 
-1. Rozbal nebo ponech tuto složku v trvalém umístění na počítači.
+1. Rozbal nebo ponech složku **Browser extension** v trvalém umístění na počítači.
 2. Otevři v Brave `brave://extensions`.
 3. Zapni **Režim pro vývojáře**.
 4. Klikni na **Načíst rozbalené** a vyber tuto složku `github-pages-export-extension`.
