@@ -144,6 +144,9 @@ button, a { font: inherit; }
 .icon-button { width: 34px; font-size: 22px; line-height: 1; }
 .today-button { padding: 0 13px; font-size: 11px; }
 .icon-button:hover, .today-button:hover { border-color: #4d9fe9; color: white; }
+.export-png-button { border-color: #315a7c; background: #173451; color: #d9ecff; font-weight: 700; }
+.export-png-button:hover { background: #20476c; }
+.export-png-button:disabled { opacity: .6; cursor: wait; }
 .calendar-scroll { overflow-x: auto; }
 .time-header, .calendar { min-width: 700px; }
 .time-header { display: grid; grid-template-columns: 78px 1fr; }

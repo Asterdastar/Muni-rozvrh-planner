@@ -770,7 +770,7 @@ function renderCalendar() {
         .format(new Date(`${startDate}T12:00:00`));
       startBadge.textContent = `VÝUKA OD ${formattedDate} · ${[...faculties].join(", ")}`;
       startBadge.title = `Oficiální začátek výuky podle harmonogramu IS MU: ${[...faculties].join(", ")}`;
-      weekHeading.append(startBadge);
+      weekHeading.insertBefore(startBadge, weekBadge);
     }
     elements.calendar.append(weekHeading);
 
@@ -886,6 +886,182 @@ function renderCalendar() {
   elements.calendarEmpty.classList.toggle("visible", state.courses.length > 0 && !hasCalendarEvents);
 }
 
+function roundedCanvasRect(context, x, y, width, height, radius) {
+  const corner = Math.min(radius, width / 2, height / 2);
+  context.beginPath();
+  context.moveTo(x + corner, y);
+  context.arcTo(x + width, y, x + width, y + height, corner);
+  context.arcTo(x + width, y + height, x, y + height, corner);
+  context.arcTo(x, y + height, x, y, corner);
+  context.arcTo(x, y, x + width, y, corner);
+  context.closePath();
+}
+
+function drawCanvasWrappedText(context, text, x, y, maxWidth, lineHeight, maxLines = 2) {
+  const words = String(text || "").split(/\s+/).filter(Boolean);
+  let line = "";
+  let lineIndex = 0;
+  for (const word of words) {
+    const candidate = line ? `${line} ${word}` : word;
+    if (line && context.measureText(candidate).width > maxWidth) {
+      context.fillText(line, x, y + lineIndex * lineHeight, maxWidth);
+      line = word;
+      lineIndex += 1;
+      if (lineIndex >= maxLines) return;
+    } else {
+      line = candidate;
+    }
+  }
+  if (line && lineIndex < maxLines) context.fillText(line, x, y + lineIndex * lineHeight, maxWidth);
+}
+
+async function exportCalendarPng() {
+  const button = document.querySelector("#export-png");
+  button.disabled = true;
+  try {
+    const gutter = 176;
+    const hourWidth = 126;
+    const timelineWidth = (END_HOUR - START_HOUR) * hourWidth;
+    const width = gutter + timelineWidth + 24;
+    const dayHeight = 92;
+    const laneHeight = 88;
+    const weeks = [weekDates(), weekDates(1)].map((dates) => ({
+      dates,
+      rows: dates.map((date, weekday) => {
+        const events = eventsForDate(date, weekday)
+          .filter((event) => event.end > START_HOUR * 60 && event.start < END_HOUR * 60);
+        const laneCount = assignLanes(events);
+        return { date, weekday, events, laneCount, height: Math.max(dayHeight, laneCount * laneHeight + 8) };
+      }),
+    }));
+    const headingHeight = 72;
+    const axisHeight = 36;
+    const weekHeadingHeight = 48;
+    const totalHeight = headingHeight + axisHeight + weeks.reduce(
+      (height, week) => height + weekHeadingHeight + week.rows.reduce((sum, row) => sum + row.height, 0),
+      0,
+    ) + 24;
+    const canvas = document.createElement("canvas");
+    const scale = 2;
+    canvas.width = width * scale;
+    canvas.height = totalHeight * scale;
+    const context = canvas.getContext("2d");
+    if (!context) throw new Error("Prohlížeč nepodporuje vytvoření obrázku.");
+    context.scale(scale, scale);
+    context.fillStyle = "#080d16";
+    context.fillRect(0, 0, width, totalHeight);
+    context.textBaseline = "middle";
+
+    context.fillStyle = "#e8edf5";
+    context.font = "700 23px Segoe UI, Arial, sans-serif";
+    context.fillText("Rozvrh předmětů", 24, 31);
+    context.fillStyle = "#9aabc0";
+    context.font = "12px Segoe UI, Arial, sans-serif";
+    context.fillText(`${formatWeekTitle(weeks[0].dates)} · ${formatWeekTitle(weeks[1].dates)}`, 24, 54);
+
+    let y = headingHeight;
+    context.fillStyle = "#9aabc0";
+    context.font = "11px Segoe UI, Arial, sans-serif";
+    for (let hour = START_HOUR; hour < END_HOUR; hour += 1) {
+      const x = gutter + (hour - START_HOUR) * hourWidth;
+      context.fillText(`${String(hour).padStart(2, "0")}:00`, x + 5, y + 17);
+    }
+    y += axisHeight;
+
+    for (const week of weeks) {
+      const weekInfo = weekParityInfo(week.dates[0]);
+      context.fillStyle = "#122238";
+      context.fillRect(0, y, width, weekHeadingHeight);
+      context.fillStyle = "#cfdeef";
+      context.font = "700 13px Segoe UI, Arial, sans-serif";
+      context.fillText(formatWeekTitle(week.dates), 24, y + weekHeadingHeight / 2);
+      context.fillStyle = weekInfo.parity === "even" ? "#81d7c0" : "#b6dcff";
+      context.textAlign = "right";
+      context.fillText(`ISO ${weekInfo.weekNumber} · ${weekInfo.parityLabel} TÝDEN`, width - 20, y + weekHeadingHeight / 2);
+      context.textAlign = "left";
+      y += weekHeadingHeight;
+
+      for (const row of week.rows) {
+        context.fillStyle = "#101a28";
+        context.fillRect(0, y, width, row.height);
+        context.fillStyle = "#e1e9f3";
+        context.font = "700 13px Segoe UI, Arial, sans-serif";
+        context.fillText(DAY_NAMES[row.weekday], 24, y + 29);
+        context.fillStyle = "#8291a5";
+        context.font = "11px Segoe UI, Arial, sans-serif";
+        context.fillText(new Intl.DateTimeFormat("cs-CZ", { day: "numeric", month: "numeric" }).format(row.date), 24, y + 49);
+
+        context.strokeStyle = "#1b2a3c";
+        context.lineWidth = 1;
+        for (let hour = 0; hour <= END_HOUR - START_HOUR; hour += 1) {
+          const x = gutter + hour * hourWidth;
+          context.beginPath();
+          context.moveTo(x, y);
+          context.lineTo(x, y + row.height);
+          context.stroke();
+        }
+        context.beginPath();
+        context.moveTo(0, y + row.height - 1);
+        context.lineTo(width, y + row.height - 1);
+        context.stroke();
+
+        for (const event of row.events) {
+          const start = Math.max(event.start, START_HOUR * 60);
+          const end = Math.min(event.end, END_HOUR * 60);
+          const x = gutter + ((start - START_HOUR * 60) / 60) * hourWidth + 3;
+          const cardWidth = Math.max(18, ((end - start) / 60) * hourWidth - 6);
+          const cardY = y + event.lane * laneHeight + 5;
+          const cardHeight = laneHeight - 10;
+          const color = courseColor(event.course.code);
+          roundedCanvasRect(context, x, cardY, cardWidth, cardHeight, 9);
+          context.fillStyle = `${color}36`;
+          context.fill();
+          context.strokeStyle = color;
+          context.lineWidth = 1.5;
+          context.stroke();
+
+          const timeLabel = `${String(Math.floor(event.start / 60)).padStart(2, "0")}:${String(event.start % 60).padStart(2, "0")}–${String(Math.floor(event.end / 60)).padStart(2, "0")}:${String(event.end % 60).padStart(2, "0")}`;
+          const groupLabel = event.group.id === "schedule" ? event.course.code : event.group.label;
+          const textX = x + 8;
+          const textWidth = Math.max(0, cardWidth - 16);
+          context.save();
+          context.beginPath();
+          context.rect(x + 2, cardY + 2, cardWidth - 4, cardHeight - 4);
+          context.clip();
+          context.fillStyle = "#f0f5fb";
+          context.font = "700 11px Segoe UI, Arial, sans-serif";
+          drawCanvasWrappedText(context, `${event.course.code} · ${groupLabel}`, textX, cardY + 14, textWidth, 13, 1);
+          context.fillStyle = "#d4e0ed";
+          context.font = "11px Segoe UI, Arial, sans-serif";
+          drawCanvasWrappedText(context, event.course.title, textX, cardY + 31, textWidth, 13, 1);
+          context.fillStyle = "#aebed0";
+          context.font = "10px Segoe UI, Arial, sans-serif";
+          drawCanvasWrappedText(context, `${timeLabel} · ${event.location}`, textX, cardY + 48, textWidth, 12, 1);
+          if (cardHeight >= 78) {
+            drawCanvasWrappedText(context, event.instructors.join(", ") || "Vyučující neuveden", textX, cardY + 63, textWidth, 12, 1);
+          }
+          context.restore();
+        }
+        y += row.height;
+      }
+    }
+
+    const image = await new Promise((resolve, reject) => {
+      canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error("PNG se nepodařilo vytvořit.")), "image/png");
+    });
+    const downloadUrl = URL.createObjectURL(image);
+    const link = document.createElement("a");
+    link.href = downloadUrl;
+    link.download = `rozvrh-${dateKey(state.weekStart)}.png`;
+    link.click();
+    window.setTimeout(() => URL.revokeObjectURL(downloadUrl), 60_000);
+  } catch (error) {
+    window.alert(`PNG se nepodařilo exportovat: ${error instanceof Error ? error.message : String(error)}`);
+  } finally {
+    button.disabled = false;
+  }
+}
+
 function render() {
   normalizeSelectedGroups();
   renderSidebar();
@@ -944,6 +1120,7 @@ document.querySelector("#today-button").addEventListener("click", () => {
   state.weekStart = mondayOf(new Date());
   renderCalendar();
 });
+document.querySelector("#export-png").addEventListener("click", exportCalendarPng);
 elements.importFileButton.addEventListener("click", () => elements.coursesFile.click());
 elements.coursesFile.addEventListener("change", async () => {
   const [file] = elements.coursesFile.files || [];
