@@ -27,6 +27,8 @@
         cursor: pointer;
       }
       button:disabled { opacity: .6; cursor: wait; }
+      a { color: #78bdff; text-decoration: none; }
+      a:hover { text-decoration: underline; }
       #status { min-height: 18px; color: #aab7c8; }
       #status.error { color: #ff9b9b; }
       #status.success { color: #72d7b5; }
@@ -37,6 +39,7 @@
     <p>Otevři seznam předmětů v IS MU a stáhni export pro statickou GitHub Pages verzi kalendáře.</p>
     <button id="export" type="button">Načíst a stáhnout JSON</button>
     <div id="status" role="status">Data se stáhnou do souboru. Rozšíření je samo nikam neodesílá.</div>
+    <p><a href="https://asterdastar.github.io/Muni-rozvrh-planner/" target="_blank" rel="noopener noreferrer">Otevřít internetový kalendář</a></p>
     <script src="popup.js"></script>
   </body>
 </html>
