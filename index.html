@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="cs">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#0b1220">
+    <title>Rozvrh předmětů</title>
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <header class="brand">
+          <div class="brand-mark" aria-hidden="true">R</div>
+          <div>
+            <p class="eyebrow">STUDIJNÍ PLÁN</p>
+            <h1>Rozvrh</h1>
+          </div>
+        </header>
+
+        <section class="import-card">
+          <p class="eyebrow">IMPORT Z IS MU</p>
+          <p>V rozšíření stáhni export rozvrhu a nahraj ho sem. Rozvrh zůstává uložený jen v tomto prohlížeči.</p>
+          <input id="courses-file" type="file" accept=".json,application/json" hidden>
+          <button id="import-file-button" class="import-file-button" type="button">Vybrat export JSON</button>
+          <button id="clear-data-button" class="clear-data-button" type="button" hidden>Smazat uložený rozvrh</button>
+          <div class="sync-status" id="sync-status" role="status">Čekám na předměty…</div>
+        </section>
+
+        <div class="course-heading">
+          <h2>Předměty</h2>
+          <span id="course-count" class="count-badge">0</span>
+        </div>
+        <div id="course-list" class="course-list"></div>
+        <div id="empty-state" class="empty-state">
+          <div class="empty-icon" aria-hidden="true">＋</div>
+          <strong>Kalendář je zatím prázdný</strong>
+          <span>Načti předměty z přihlášené stránky IS MU pomocí rozšíření a nahraj export JSON.</span>
+        </div>
+        <footer class="sidebar-footer">
+          Data zůstávají uložená lokálně v tomto prohlížeči. Export nikdy nenahrávej do repozitáře.
+        </footer>
+      </aside>
+
+      <main class="main-panel">
+        <header class="calendar-header">
+          <div>
+            <p class="eyebrow" id="week-label">PŘEHLED DVOU TÝDNŮ</p>
+            <div class="week-title-row">
+              <h2 id="week-title">Tento týden</h2>
+              <span id="week-parity" class="week-parity" role="status" aria-live="polite"></span>
+            </div>
+          </div>
+          <div class="calendar-controls">
+            <button class="icon-button" id="previous-week" aria-label="Předchozí týden">‹</button>
+            <button class="today-button" id="today-button">Dnes</button>
+            <button class="icon-button" id="next-week" aria-label="Další týden">›</button>
+          </div>
+        </header>
+
+        <div class="calendar-scroll">
+          <div class="time-header">
+            <div class="day-gutter"></div>
+            <div id="time-labels" class="time-labels"></div>
+          </div>
+          <section id="calendar" class="calendar" aria-label="Týdenní kalendář"></section>
+        </div>
+        <div id="calendar-empty" class="calendar-empty">
+          <div class="empty-calendar-icon" aria-hidden="true">▦</div>
+          <strong>Vyber seminární skupinu</strong>
+          <span>Skupiny jednotlivých předmětů najdeš v levém panelu. Kliknutím se zobrazí v rozvrhu.</span>
+        </div>
+        <div class="timezone-note">Časy jsou zobrazené v místním čase.</div>
+      </main>
+    </div>
+    <dialog id="color-picker-dialog" class="color-picker-dialog" aria-labelledby="color-picker-heading">
+      <form method="dialog" class="color-picker-form">
+        <div class="color-picker-heading">
+          <div>
+            <p class="eyebrow">BARVA PŘEDMĚTU</p>
+            <h2 id="color-picker-heading">Vlastní barva</h2>
+          </div>
+          <button class="color-picker-close" type="submit" aria-label="Zavřít výběr barvy">×</button>
+        </div>
+        <p id="color-picker-course" class="color-picker-course"></p>
+        <div class="color-picker-fields">
+          <label class="color-picker-field color-picker-color-label" for="color-picker-input">
+            RGB
+            <input id="color-picker-input" class="color-picker-input" type="color" value="#62adff">
+          </label>
+          <label class="color-picker-field color-picker-hex-label" for="color-picker-value">
+            HEX
+            <input id="color-picker-value" class="color-picker-value" type="text" value="#62ADFF" maxlength="7" spellcheck="false" autocomplete="off">
+          </label>
+        </div>
+        <button id="color-picker-unique" class="color-picker-unique" type="button">Nová unikátní barva</button>
+      </form>
+    </dialog>
+    <script src="./app.js"></script>
+  </body>
+</html>
