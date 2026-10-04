@@ -16,7 +16,7 @@ V Chrome je postup obdobný na stránce `chrome://extensions`.
 
 ## Vytvoření exportu
 
-1. Přihlas se do IS MU a otevři seznam předmětů. Rozšíření potřebuje otevřenou stránku na `https://is.muni.cz/`.
+1. Přihlas se do IS MU a otevři kartu **Registrace a zápis předmětů**. 
 2. Klikni na ikonu rozšíření **Rozvrh IS MU – export JSON**.
 3. Klikni na **Načíst a stáhnout JSON** a potvrď umístění staženého souboru.
 4. Výsledkem je `rozvrh-predmety.json`. Pokud některý předmět nebo doplňkový údaj nebyl dostupný, popup zobrazí upozornění.
